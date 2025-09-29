@@ -1,11 +1,11 @@
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, constr
 
 
 class FeatureBase(BaseModel):
-    title: str
-    description: str
+    title: constr(min_length=1)
+    description: constr(min_length=1)
 
 
 class FeatureCreate(FeatureBase):
