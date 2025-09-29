@@ -14,16 +14,18 @@ UpdateSchemaType = TypeVar("UpdateSchemaType")
 class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
+        self.pk_column = list(self.model.__table__.primary_key.columns)[0]
 
     async def get(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
-        pk_column = list(self.model.__table__.primary_key.columns)[0]
-        result = await db.execute(select(self.model).filter(pk_column == id))
+        result = await db.execute(select(self.model).filter(self.pk_column == id))
         return result.scalars().first()
 
     async def get_multi(
         self, db: AsyncSession, skip: int = 0, limit: int = 100
     ) -> List[ModelType]:
-        result = await db.execute(select(self.model).offset(skip).limit(limit))
+        result = await db.execute(
+            select(self.model).offset(skip).limit(limit).order_by(self.pk_column)
+        )
         return result.scalars().all()
 
     async def create(self, db: AsyncSession, obj_in: CreateSchemaType) -> ModelType:

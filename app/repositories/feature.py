@@ -31,17 +31,16 @@ class FeatureRepository(BaseRepository[Feature, FeatureCreate, FeatureUpdate]):
         self,
         db: AsyncSession,
         feature_id: int,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
+        feature_schema: FeatureUpdate,
     ) -> Optional[Feature]:
-        # Если новое название указано, проверяем уникальность
-        if title:
-            existing_feature = await self.get_by_title(db, title)
+        if feature_schema.title:
+            existing_feature = await self.get_by_title(db, feature_schema.title)
             if existing_feature and existing_feature.feature_id != feature_id:
-                raise ValueError(f"Feature с названием '{title}' уже существует")
+                raise ValueError(
+                    f"Feature с названием '{feature_schema.title}' уже существует"
+                )
 
-        feature_update = FeatureUpdate(title=title, description=description)
-        return await self.update_by_id(db, feature_id, feature_update)
+        return await self.update_by_id(db, feature_id, feature_schema)
 
 
 feature_repository = FeatureRepository()
