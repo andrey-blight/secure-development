@@ -10,6 +10,19 @@ from ....schemas.feature import Feature, FeatureCreate, FeatureUpdate
 router = APIRouter(prefix="/feature", tags=["feature"])
 
 
+@router.get("/search", response_model=List[Feature])
+async def search_feature_by_title(
+    title: str,
+    db: AsyncSession = Depends(get_session),
+):
+    feature = await feature_repository.find_by_title(db, title)
+    if not feature:
+        raise HTTPException(
+            status_code=404, detail=f"Feature with title '{title}' not found"
+        )
+    return feature
+
+
 @router.get("/", response_model=List[Feature])
 async def get_features(
     db: AsyncSession = Depends(get_session), skip: int = 0, limit: int = 100

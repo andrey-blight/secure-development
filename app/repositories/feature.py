@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,14 @@ from .base import BaseRepository
 class FeatureRepository(BaseRepository[Feature, FeatureCreate, FeatureUpdate]):
     def __init__(self):
         super().__init__(Feature)
+
+    async def find_by_title(self, db: AsyncSession, title: str) -> List[Feature]:
+        result = await db.execute(
+            select(Feature)
+            .filter(Feature.title.ilike(f"%{title}%"))
+            .order_by(self.pk_column)
+        )
+        return result.scalars().all()
 
     async def get_by_title(self, db: AsyncSession, title: str) -> Optional[Feature]:
         result = await db.execute(select(Feature).filter(Feature.title == title))
