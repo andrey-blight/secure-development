@@ -1,6 +1,7 @@
-from core import settings
 from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from ..core import settings
 
 url_object = URL.create(
     "postgresql+asyncpg",
