@@ -1,0 +1,35 @@
+# CODEOWNERS file
+# Each line is a file pattern followed by one or more owners.
+# These owners will be the default reviewers for everything in the repo.
+
+# Default owners for everything in the repo
+* @andrey-blight
+
+# Core application code
+/app/ @andrey-blight
+
+# API endpoints - require review for API changes
+/app/api/ @andrey-blight
+
+# Database models and migrations - critical changes
+/app/models/ @andrey-blight
+/alembic/ @andrey-blight
+
+# Configuration files
+/app/core/ @andrey-blight
+*.yaml @andrey-blight
+*.yml @andrey-blight
+docker-compose.yaml @andrey-blight
+compose.yaml @andrey-blight
+Dockerfile @andrey-blight
+
+# Security and documentation
+/SECURITY.md @andrey-blight
+/README.md @andrey-blight
+
+# CI/CD workflows
+/.github/ @andrey-blight
+
+# Dependencies
+requirements*.txt @andrey-blight
+pyproject.toml @andrey-blight
