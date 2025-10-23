@@ -1,8 +1,9 @@
 from typing import List
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ....core.exceptions import NotFoundError, ValidationError
 from ....db import get_session
 from ....repositories import feature_repository
 from ....schemas.feature import Feature, FeatureCreate, FeatureUpdate
@@ -17,9 +18,7 @@ async def search_feature_by_title(
 ):
     feature = await feature_repository.find_by_title(db, title)
     if not feature:
-        raise HTTPException(
-            status_code=404, detail=f"Feature with title '{title}' not found"
-        )
+        raise NotFoundError(f"Feature with title '{title}' not found")
     return feature
 
 
@@ -38,7 +37,7 @@ async def get_feature(
 ):
     feature = await feature_repository.get(db, feature_id)
     if not feature:
-        raise HTTPException(status_code=404, detail="Feature not found")
+        raise NotFoundError(resource="Feature")
     return feature
 
 
@@ -50,7 +49,7 @@ async def create_feature(
     try:
         feature = await feature_repository.create_feature(db, feature)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise ValidationError(detail=str(e))
     return feature
 
 
@@ -65,9 +64,9 @@ async def update_feature(
             db, feature_id, feature
         )
         if not updated_feature:
-            raise HTTPException(status_code=404, detail="Feature not found")
+            raise NotFoundError(resource="Feature")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise ValidationError(detail=str(e))
     return updated_feature
 
 
@@ -78,5 +77,5 @@ async def delete_feature(
 ):
     feature = await feature_repository.remove(db, feature_id)
     if not feature:
-        raise HTTPException(status_code=404, detail="Feature not found")
+        raise NotFoundError(resource="Feature")
     return feature
