@@ -12,7 +12,13 @@ url_object = URL.create(
     database=settings.PG_DATABASE,
 )
 
-engine = create_async_engine(url_object, echo=False)
+engine = create_async_engine(
+    url_object,
+    echo=False,
+    pool_recycle=3600,
+    pool_timeout=30,
+    pool_pre_ping=True,
+)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
