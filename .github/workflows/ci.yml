@@ -29,7 +29,6 @@ jobs:
         run: |
           ruff check --output-format=github .
           black --check .
-          isort --check-only .
 
       - name: Tests
         run: pytest -q

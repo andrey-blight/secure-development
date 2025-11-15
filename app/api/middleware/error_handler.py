@@ -1,6 +1,7 @@
 """RFC 7807 error handler middleware with sensitive data masking."""
 
 import logging
+import os
 import re
 from typing import Any
 
@@ -248,7 +249,6 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
         # In production, return generic error message (no internal details)
         # Check if we're in production mode
-        import os
 
         is_production = (
             os.environ.get("ENVIRONMENT", "development").lower() == "production"
