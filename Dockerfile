@@ -44,6 +44,10 @@ COPY --chown=app:app app ./app
 COPY --chown=app:app alembic ./alembic
 COPY --chown=app:app alembic.ini .
 
+# Copy and setup entrypoint script (before USER app)
+COPY --chown=app:app docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # activate venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
@@ -57,5 +61,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=60s --timeout=1s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-ENTRYPOINT ["uvicorn"]
-CMD ["app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

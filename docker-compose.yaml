@@ -6,7 +6,7 @@ networks:
 
 services:
   postgres:
-    image: postgres:15.8-alpine@sha256:4a8d48f513f13e09f12cfeef3f2364896f0f964a0dbc674ceacdf5a2fd4c7837
+    image: postgres:15.15-alpine@sha256:aa7b1ef595e165f0b780162e3a41edd0a7ed3ea672eb8a0f81615ba725e62bc5
     container_name: feature_votes_database
     restart: unless-stopped
     networks:
@@ -70,10 +70,14 @@ services:
       start_period: 40s
 
     read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+      - /var/tmp:rw,noexec,nosuid,size=10m
+      - /run:rw,noexec,nosuid,size=10m
     security_opt:
       - no-new-privileges:true
       - apparmor=docker-default
-      - seccomp=/seccomp-profile.json
+      - seccomp=./seccomp-profile.json
     cap_drop:
       - ALL
     cap_add:
