@@ -27,6 +27,9 @@ services:
       retries: 5
       start_period: 10s
     user: postgres
+    security_opt:
+      - no-new-privileges:true
+
     deploy:
       resources:
         limits:
@@ -65,6 +68,20 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - apparmor=docker-default
+      - seccomp=/seccomp-profile.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+
     deploy:
       resources:
         limits:
