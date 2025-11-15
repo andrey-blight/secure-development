@@ -48,19 +48,22 @@ class TestFeatureEndpoints:
 
         assert response.status_code == 400
         print(response.json())
-        assert "уже существует" in response.json()["error"]["message"]
+        assert "уже существует" in response.json()["detail"]
 
     def test_create_feature_invalid_data(self):
         response = client.post("/api/v1/feature/", json={"description": "Test"})
-        assert response.status_code == 422
+        assert response.status_code == 400
+        assert "Request validation failed" in response.json()["detail"]
 
         response = client.post("/api/v1/feature/", json={"title": "Test"})
-        assert response.status_code == 422
+        assert response.status_code == 400
+        assert "Request validation failed" in response.json()["detail"]
 
         response = client.post(
             "/api/v1/feature/", json={"title": "", "description": ""}
         )
-        assert response.status_code == 422
+        assert response.status_code == 400
+        assert "Request validation failed" in response.json()["detail"]
 
     @patch("app.api.v1.endpoints.feature.feature_repository")
     def test_get_features_empty(self, mock_repo):
@@ -125,7 +128,7 @@ class TestFeatureEndpoints:
         response = client.get("/api/v1/feature/99999")
 
         assert response.status_code == 404
-        assert response.json()["error"]["message"] == "Feature not found"
+        assert response.json()["detail"] == "Feature not found"
 
     @patch("app.api.v1.endpoints.feature.feature_repository")
     def test_update_feature_success(self, mock_repo):
@@ -164,7 +167,7 @@ class TestFeatureEndpoints:
         response = client.put("/api/v1/feature/99999", json=update_data)
 
         assert response.status_code == 404
-        assert response.json()["error"]["message"] == "Feature not found"
+        assert response.json()["detail"] == "Feature not found"
 
     @patch("app.api.v1.endpoints.feature.feature_repository")
     def test_update_feature_duplicate_title(self, mock_repo):
@@ -176,7 +179,7 @@ class TestFeatureEndpoints:
         response = client.put("/api/v1/feature/2", json=update_data)
 
         assert response.status_code == 400
-        assert "уже существует" in response.json()["error"]["message"]
+        assert "уже существует" in response.json()["detail"]
 
     @patch("app.api.v1.endpoints.feature.feature_repository")
     def test_delete_feature_success(self, mock_repo):
@@ -198,7 +201,7 @@ class TestFeatureEndpoints:
         response = client.delete("/api/v1/feature/99999")
 
         assert response.status_code == 404
-        assert response.json()["error"]["message"] == "Feature not found"
+        assert response.json()["detail"] == "Feature not found"
 
     @patch("app.api.v1.endpoints.feature.feature_repository")
     def test_search_feature_by_title_success(self, mock_repo):
@@ -219,4 +222,4 @@ class TestFeatureEndpoints:
         response = client.get("/api/v1/feature/search?title=Nonexistent")
 
         assert response.status_code == 404
-        assert "not found" in response.json()["error"]["message"]
+        assert "not found" in response.json()["detail"]
