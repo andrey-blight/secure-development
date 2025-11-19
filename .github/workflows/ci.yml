@@ -57,12 +57,6 @@ jobs:
           pytest --cov=app --cov-report=html --cov-report=xml --cov-report=term \
                  --html=pytest-report.html --self-contained-html -v
 
-      - name: Build Python Wheel
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-        run: |
-          python -m pip install build
-          python -m build
-
       - name: Upload Coverage Reports
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
@@ -88,14 +82,6 @@ jobs:
           name: lint-reports
           path: ruff-report.json
           retention-days: 30
-
-      - name: Upload Python Wheel
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-wheel
-          path: dist/*.whl
-          retention-days: 90
 
       - name: Pre-commit (all files)
         run: pre-commit run --all-files
