@@ -11,14 +11,29 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Cache pre-commit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-py${{ matrix.python-version }}-
 
       - name: Install dependencies
         run: |
@@ -27,11 +42,146 @@ jobs:
 
       - name: Lint & Format
         run: |
+          ruff check --output-format=json . > ruff-report.json || true
           ruff check --output-format=github .
           black --check .
 
-      - name: Tests
-        run: pytest -q
+      - name: Tests with Coverage
+        env:
+          PG_USER: ${{ secrets.PG_USER }}
+          PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
+          PG_HOST: ${{ secrets.PG_HOST }}
+          PG_DATABASE: ${{ secrets.PG_DATABASE }}
+          PG_PORT: ${{ secrets.PG_PORT }}
+        run: |
+          pytest --cov=app --cov-report=html --cov-report=xml --cov-report=term \
+                 --html=pytest-report.html --self-contained-html -v
+
+      - name: Upload Coverage Reports
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            htmlcov/
+            coverage.xml
+          retention-days: 30
+
+      - name: Upload Test Reports
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: pytest-report.html
+          retention-days: 30
+
+      - name: Upload Lint Reports
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: ruff-report.json
+          retention-days: 30
 
       - name: Pre-commit (all files)
         run: pre-commit run --all-files
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/secdev-course-app
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          PG_USER=${{ secrets.PG_USER }}
+          PG_PASSWORD=${{ secrets.PG_PASSWORD }}
+          PG_DATABASE=${{ secrets.PG_DATABASE }}
+          PG_PORT=${{ secrets.PG_PORT }}
+          APP_PORT=8000
+          APP_ENV=${{ secrets.APP_ENV }}
+          LOG_LEVEL=${{ secrets.LOG_LEVEL }}
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG=${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          EOF
+
+      - name: Deploy to Server
+        run: |
+          # Create deployment directory
+          ssh -l ${{ secrets.SSH_USER }} ${{ secrets.SSH_HOST }} "mkdir -p ~/app-deployment"
+
+          # Copy files to server
+          scp -r docker-compose.yaml .env seccomp-profile.json \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/app-deployment/
+
+          # Deploy on server
+          ssh -l ${{ secrets.SSH_USER }} ${{ secrets.SSH_HOST }} << 'ENDSSH'
+            cd ~/app-deployment
+
+            # Login to Docker Hub
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # Stop existing containers
+            docker compose down || true
+
+            # Remove old images
+            docker system prune -af --volumes || true
+
+            # Pull and start new containers
+            docker compose pull
+            docker compose up -d
+
+            # Show status
+            docker compose ps
+          ENDSSH
+
+      - name: Health Check
+        run: |
+          sleep 30
+          ssh -l ${{ secrets.SSH_USER }} ${{ secrets.SSH_HOST }} \
+            "curl -f http://localhost:8000/health || exit 1"
