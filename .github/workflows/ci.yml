@@ -84,6 +84,8 @@ jobs:
           retention-days: 30
 
       - name: Pre-commit (all files)
+        env:
+          SKIP: ${{ github.ref == 'refs/heads/main' && 'no-commit-to-branch' || '' }}
         run: pre-commit run --all-files
 
   docker:
