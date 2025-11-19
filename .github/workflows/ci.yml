@@ -109,7 +109,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha
+            type=raw,value=${{ github.head_ref || github.ref_name }}-${{ github.sha }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and Push Docker Image
