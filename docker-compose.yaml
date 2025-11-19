@@ -40,9 +40,7 @@ services:
           memory: 256M
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME:-andreykizhinov}/secdev-course-app:${IMAGE_TAG:-latest}
     container_name: secdev_app
     restart: unless-stopped
     networks:
