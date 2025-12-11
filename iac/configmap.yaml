@@ -1,0 +1,16 @@
+# ConfigMap for SecDev Course App
+# Non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: secdev-app-config
+  namespace: secdev
+  labels:
+    app: secdev-app
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PG_HOST: "postgres-service"
+  PG_PORT: "5432"
