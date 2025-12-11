@@ -50,4 +50,32 @@ docker compose up --build
 }
 ```
 
+## Security: SBOM & SCA (P09)
+
+Автоматическая генерация SBOM и сканирование уязвимостей зависимостей.
+
+### Артефакты (`EVIDENCE/P09/`)
+
+| Файл | Описание |
+|------|----------|
+| `sbom.json` | Software Bill of Materials (CycloneDX JSON) — полный список зависимостей |
+| `sca_report.json` | Детальный отчёт SCA от Grype — все найденные уязвимости |
+| `sca_summary.md` | Агрегированная сводка: счётчики по severity, список Critical/High, план действий |
+
+### Инструменты
+
+- **SBOM**: [Syft](https://github.com/anchore/syft) v0.17.8
+- **SCA**: [Grype](https://github.com/anchore/grype) v5.3.0
+
+### Политика исключений
+
+Файл `policy/waivers.yml` содержит документированные исключения для уязвимостей, которые не могут быть исправлены немедленно. См. SLA:
+- Critical: фикс в течение 7 дней
+- High: фикс в течение 30 дней или waiver
+- Medium: фикс в течение 90 дней
+
+### Запуск
+
+Workflow запускается автоматически при изменениях в `requirements*.txt`, `**/*.py`, или вручную через Actions → `Security - SBOM & SCA` → Run workflow.
+
 См. также: `SECURITY.md`, `.pre-commit-config.yaml`, `.github/workflows/ci.yml`.

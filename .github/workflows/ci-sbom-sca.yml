@@ -29,15 +29,14 @@ jobs:
         run: mkdir -p EVIDENCE/P09
 
       - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.17.8
         with:
           path: .
           format: cyclonedx-json
           output-file: EVIDENCE/P09/sbom.json
-          artifact-name: sbom-cyclonedx
 
       - name: Run Grype SCA scan
-        uses: anchore/scan-action@v4
+        uses: anchore/scan-action@v5.3.0
         id: grype-scan
         with:
           sbom: EVIDENCE/P09/sbom.json
@@ -90,11 +89,40 @@ jobs:
             echo "| **Total** | **$TOTAL** |" >> EVIDENCE/P09/sca_summary.md
 
             echo "" >> EVIDENCE/P09/sca_summary.md
+            echo "## Critical & High Vulnerabilities" >> EVIDENCE/P09/sca_summary.md
+            echo "" >> EVIDENCE/P09/sca_summary.md
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              jq -r '.matches[] | select(.vulnerability.severity == "Critical" or .vulnerability.severity == "High") | "- **\(.vulnerability.id)** (\(.vulnerability.severity)): \(.artifact.name)@\(.artifact.version) - \(.vulnerability.description // "No description")[.\(.vulnerability.dataSource // "")]"' \
+                EVIDENCE/P09/sca_report.json >> EVIDENCE/P09/sca_summary.md 2>/dev/null || echo "Error parsing vulnerabilities." >> EVIDENCE/P09/sca_summary.md
+            else
+              echo "✅ No Critical or High vulnerabilities found." >> EVIDENCE/P09/sca_summary.md
+            fi
+
+            echo "" >> EVIDENCE/P09/sca_summary.md
+            echo "## Action Plan" >> EVIDENCE/P09/sca_summary.md
+            echo "" >> EVIDENCE/P09/sca_summary.md
+            echo "| Priority | Action |" >> EVIDENCE/P09/sca_summary.md
+            echo "|----------|--------|" >> EVIDENCE/P09/sca_summary.md
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "| 🔴 Critical | Immediate fix required (SLA: 7 days) |" >> EVIDENCE/P09/sca_summary.md
+            fi
+            if [ "$HIGH" -gt 0 ]; then
+              echo "| 🟠 High | Fix within 30 days or add waiver to \`policy/waivers.yml\` |" >> EVIDENCE/P09/sca_summary.md
+            fi
+            if [ "$MEDIUM" -gt 0 ]; then
+              echo "| 🟡 Medium | Review and plan fix within 90 days |" >> EVIDENCE/P09/sca_summary.md
+            fi
+            if [ "$CRITICAL" -eq 0 ] && [ "$HIGH" -eq 0 ] && [ "$MEDIUM" -eq 0 ]; then
+              echo "| ✅ None | No immediate action required |" >> EVIDENCE/P09/sca_summary.md
+            fi
+
+            echo "" >> EVIDENCE/P09/sca_summary.md
             echo "## Notes" >> EVIDENCE/P09/sca_summary.md
             echo "" >> EVIDENCE/P09/sca_summary.md
-            echo "- SBOM generated using Syft (CycloneDX JSON format)" >> EVIDENCE/P09/sca_summary.md
-            echo "- SCA scan performed using Grype" >> EVIDENCE/P09/sca_summary.md
+            echo "- SBOM generated using Syft v0.17.8 (CycloneDX JSON format)" >> EVIDENCE/P09/sca_summary.md
+            echo "- SCA scan performed using Grype v5.3.0" >> EVIDENCE/P09/sca_summary.md
             echo "- Waivers policy: see \`policy/waivers.yml\`" >> EVIDENCE/P09/sca_summary.md
+            echo "- Full report: \`EVIDENCE/P09/sca_report.json\`" >> EVIDENCE/P09/sca_summary.md
           else
             echo "No scan results available." >> EVIDENCE/P09/sca_summary.md
           fi
