@@ -144,7 +144,7 @@ jobs:
         run: |
           checkov \
             --file docker-compose.yaml \
-            --framework docker_compose \
+            --framework yaml \
             --output json \
             --output-file-path EVIDENCE/P12 \
             --soft-fail \
