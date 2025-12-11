@@ -1,0 +1,49 @@
+# Checkov configuration for IaC security scanning
+# Documentation: https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+
+# Directories to scan
+directory:
+  - iac/
+  - docker-compose.yaml
+
+# Framework to use (auto-detect if not specified)
+framework:
+  - dockerfile
+  - kubernetes
+  - yaml
+
+# Output format
+output:
+  - json
+  - cli
+
+# Soft fail - don't fail the build on findings (for initial setup)
+soft-fail: false
+
+# Compact output
+compact: true
+
+# Download external modules
+download-external-modules: false
+
+# Skip specific checks if needed (document reasons)
+skip-check:
+  # Example skips with reasons:
+  # - CKV_DOCKER_2  # HEALTHCHECK instruction - we have it but in specific format
+  # - CKV_K8S_43    # Image should use digest - we use tags for flexibility
+
+# Check specific rules only (comment out to run all)
+# check:
+#   - CKV_DOCKER_1  # Ensure that HEALTHCHECK instructions have been added
+#   - CKV_DOCKER_2  # Ensure that HEALTHCHECK is added to Dockerfile
+#   - CKV_DOCKER_3  # Ensure that a user for the container has been created
+
+# Severity threshold
+# critical, high, medium, low
+# check-severity: high
+
+# External checks directory (custom rules)
+# external-checks-dir: security/checkov-custom/
+
+# Secrets scanning
+enable-secret-scan-all-files: true

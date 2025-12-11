@@ -1,0 +1,112 @@
+# Kubernetes Deployment for SecDev Course App
+# Hardened configuration following security best practices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secdev-app
+  namespace: secdev
+  labels:
+    app: secdev-app
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: secdev-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: secdev-app
+        version: v1
+    spec:
+      # Security context at pod level
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Service account with minimal permissions
+      serviceAccountName: secdev-app-sa
+      automountServiceAccountToken: false
+
+      containers:
+        - name: app
+          image: andreykizhinov/secdev-course-app:0.1.0
+          imagePullPolicy: Always
+
+          # Container security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+          # Environment variables from ConfigMap and Secrets
+          envFrom:
+            - configMapRef:
+                name: secdev-app-config
+            - secretRef:
+                name: secdev-app-secrets
+
+          # Resource limits
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Volume mounts for writable directories
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: var-tmp
+              mountPath: /var/tmp
+
+      # Volumes
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+        - name: var-tmp
+          emptyDir:
+            sizeLimit: 10Mi
+
+      # Pod disruption budget friendly
+      terminationGracePeriodSeconds: 30

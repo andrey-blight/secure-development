@@ -1,0 +1,65 @@
+# Trivy configuration for container image scanning
+# Documentation: https://aquasecurity.github.io/trivy/latest/docs/references/configuration/config-file/
+
+# Scan settings
+scan:
+  # Security checks to run
+  security-checks:
+    - vuln
+    - secret
+    - misconfig
+
+# Vulnerability settings
+vulnerability:
+  # Types of vulnerabilities to scan for
+  type:
+    - os
+    - library
+
+  # Ignore unfixed vulnerabilities
+  ignore-unfixed: false
+
+# Severity levels to report
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+  # - LOW  # Uncomment to include low severity
+
+# Output format
+format: json
+
+# Exit code when vulnerabilities found
+exit-code: 0  # Set to 1 to fail on findings
+
+# Timeout for scanning
+timeout: 10m
+
+# Cache settings
+cache:
+  # Clear cache before scanning
+  clear: false
+
+  # Cache directory
+  # dir: /tmp/trivy-cache
+
+# Database settings
+db:
+  # Skip database update (use cached)
+  skip-update: false
+
+# Misconfiguration settings
+misconfiguration:
+  # Include non-failures
+  include-non-failures: false
+
+# Secret scanning settings
+secret:
+  # Config path for custom secret rules
+  # config: security/trivy-secrets.yaml
+
+# Ignore specific vulnerabilities (document reasons)
+# Create .trivyignore file for specific CVEs:
+# Example .trivyignore:
+# CVE-2021-44228  # Log4j - not applicable, Python app
+# CVE-XXXX-XXXX  # Description of why ignored
