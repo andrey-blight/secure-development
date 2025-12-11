@@ -1,0 +1,16 @@
+# ZAP Baseline Rules Configuration
+# Format: rule_id	action	description
+# Actions: IGNORE, WARN, FAIL
+# See: https://www.zaproxy.org/docs/docker/baseline-scan/
+
+# Informational alerts - typically safe to ignore in baseline
+10021	WARN	X-Content-Type-Options Header Missing
+10036	WARN	Server Leaks Version Information
+10037	WARN	Server Leaks Information via "X-Powered-By"
+10038	WARN	Content Security Policy (CSP) Header Not Set
+10098	WARN	Cross-Domain Misconfiguration
+
+# Common false positives for API services
+10020	WARN	X-Frame-Options Header Not Set
+10035	WARN	Strict-Transport-Security Header Not Set
+90033	WARN	Loosely Scoped Cookie
