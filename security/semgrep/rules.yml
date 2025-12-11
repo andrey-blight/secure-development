@@ -1,0 +1,61 @@
+rules:
+  # Rule 1: Detect hardcoded passwords in Python code
+  - id: hardcoded-password-python
+    message: >-
+      Potential hardcoded password detected. Use environment variables
+      or a secrets manager instead.
+    severity: WARNING
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: password = "..."
+          - pattern: PASSWORD = "..."
+          - pattern: passwd = "..."
+          - pattern: secret = "..."
+          - pattern: SECRET = "..."
+          - pattern: api_key = "..."
+          - pattern: API_KEY = "..."
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      confidence: MEDIUM
+      owasp: "A07:2021 - Identification and Authentication Failures"
+
+  # Rule 2: Detect debug mode enabled in production
+  - id: debug-mode-enabled
+    message: >-
+      Debug mode should be disabled in production environments.
+      Use environment variables to control debug settings.
+    severity: WARNING
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: DEBUG = True
+          - pattern: debug = True
+          - pattern: debug=True
+    metadata:
+      category: security
+      cwe: "CWE-489: Active Debug Code"
+      confidence: MEDIUM
+      owasp: "A05:2021 - Security Misconfiguration"
+
+  # Rule 3: Detect SQL injection risks (raw SQL)
+  - id: raw-sql-execution
+    message: >-
+      Raw SQL execution detected. Use parameterized queries
+      or ORM methods to prevent SQL injection.
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $CURSOR.execute($SQL % ...)
+          - pattern: |
+              $CURSOR.execute($SQL.format(...))
+          - pattern: |
+              $CURSOR.execute(f"...")
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      confidence: HIGH
+      owasp: "A03:2021 - Injection"

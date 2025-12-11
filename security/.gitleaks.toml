@@ -1,0 +1,54 @@
+# Gitleaks configuration for P10 - Secrets Scanning
+# See https://github.com/gitleaks/gitleaks for documentation
+
+title = "Gitleaks config for course-project"
+
+[extend]
+# Use default gitleaks rules as base
+useDefault = true
+
+# Allowlist - patterns and paths to ignore
+[allowlist]
+description = "Global allowlist"
+
+# Paths to ignore (example configs, test fixtures, etc.)
+paths = [
+    '''\.env\.example$''',
+    '''\.env\.sample$''',
+    '''tests/.*''',
+    '''docs/.*''',
+    '''\.md$''',
+    '''\.txt$''',
+]
+
+# Regex patterns to ignore (example/placeholder values)
+regexes = [
+    '''example[-_]?password''',
+    '''placeholder[-_]?secret''',
+    '''your[-_]?api[-_]?key[-_]?here''',
+    '''<your[-_]?.*>''',
+    '''dummy[-_]?.*''',
+    '''CHANGE[-_]?ME''',
+]
+
+# Custom rules
+[[rules]]
+id = "python-hardcoded-secret"
+description = "Hardcoded secret in Python file"
+regex = '''(?i)(password|secret|api_key|apikey|token)\s*=\s*['"]\w{8,}['"]'''
+path = '''\.py$'''
+entropy = 3.5
+
+[rules.allowlist]
+paths = ['''tests/.*''', '''conftest\.py$''']
+regexes = ['''test[-_]?.*''', '''fake[-_]?.*''', '''mock[-_]?.*''']
+
+[[rules]]
+id = "env-file-secrets"
+description = "Potential secret in .env file"
+regex = '''(?i)(password|secret|api_key|apikey|token|private_key)\s*=\s*.+'''
+path = '''\.env$'''
+entropy = 3.0
+
+[rules.allowlist]
+regexes = ['''\$\{.*\}''', '''<.*>''', '''your[-_]?.*[-_]?here''']
