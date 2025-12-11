@@ -1,14 +1,37 @@
-# policy/waivers.yml — шаблон файла исключений для SBOM & SCA
+# policy/waivers.yml — файл исключений для SBOM & SCA
 # См. project/69_sbom-vuln-mgmt.md для описания политики.
+#
+# Процесс работы с уязвимостями:
+# 1. CI запускает SCA и генерирует sca_report.json
+# 2. При обнаружении Critical/High — требуется действие:
+#    - Вариант A: Обновить зависимость (предпочтительно)
+#    - Вариант B: Оформить waiver (если фикс невозможен)
+# 3. Waiver требует: обоснование, срок пересмотра, ссылку на Issue
+#
+# SLA по severity:
+# - Critical: фикс в течение 7 дней, waiver макс. 30 дней
+# - High: фикс в течение 30 дней, waiver макс. 90 дней
+# - Medium: фикс в течение 90 дней
+# - Low: по возможности
+#
+# Текущий статус (2025-12-11):
+# ✅ SCA scan: 0 уязвимостей найдено
+# ✅ Все зависимости актуальны
+# ✅ Waivers не требуются
 
 waivers: []
-# Пример записи:
+
+# Пример записи waiver (для справки):
 # waivers:
 #   - id: "CVE-2024-XXXX"
 #     package: "example-lib"
 #     version: "1.2.3"
 #     severity: "High"
-#     reason: "Транзитивная зависимость; нет фикса; компонент не в прод-цепочке."
-#     issue: "https://github.com/<org>/<repo>/issues/123"
-#     expires_at: "2025-12-31"
-#     approved_by: "tutor@example.org"
+#     reason: |
+#       Уязвимость требует специфичных условий эксплуатации:
+#       - Необходим доступ к внутренней сети (заблокирован firewall)
+#       - Затрагивает только функцию X (отключена в production)
+#     mitigation: "WAF rules + network segmentation"
+#     issue: "https://github.com/andrey-blight/secure-development/issues/XXX"
+#     expires_at: "2025-03-11"
+#     approved_by: "security-team@example.org"
